@@ -377,12 +377,11 @@ body {
     border: 1px solid var(--neutral-trim);
     margin: 12px;
     margin-top: 2px;
-    padding-left: 30px;
 }
 
-.repl-editor-container .monaco-editor .view-line {
+.repl-editor-container .monaco-editor .lines-content {
+    padding-left: 34px;
     padding-top: 2px;
-    padding-left: 4px;
 }
 
 .repl-input-container::before {

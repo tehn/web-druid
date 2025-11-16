@@ -473,7 +473,9 @@ class DruidApp {
             }
 
             const keyCode = e.keyCode;
-            const isSuggestVisible = e.browserEvent.target.closest('.suggest-widget');
+            // Check if suggestion widget is visible by querying the DOM
+            const suggestWidget = document.querySelector('.editor-widget.suggest-widget.visible');
+            const isSuggestVisible = suggestWidget !== null;
             
             // Handle Enter key - send command ONLY when suggestion widget is not visible
             if (keyCode === monaco.KeyCode.Enter && !e.shiftKey && !isSuggestVisible) {
@@ -483,22 +485,27 @@ class DruidApp {
                     e.stopPropagation();
                     this.sendReplCommand(code);
                 }
+                return;
             }
             // Shift+Enter always creates a new line (default behavior, don't prevent)
             
-            // Handle Up arrow for history navigation - always navigate regardless of cursor position
-            else if (keyCode === monaco.KeyCode.UpArrow && !isSuggestVisible) {
+            // Handle Up/Down arrows - only navigate history when suggestion widget is NOT visible
+            // When suggestion widget IS visible, let Monaco handle arrow keys for navigation
+            if (keyCode === monaco.KeyCode.UpArrow && !isSuggestVisible) {
                 e.preventDefault();
                 e.stopPropagation();
                 this.navigateReplHistory('up');
+                return;
             }
             
-            // Handle Down arrow for history navigation - always navigate regardless of cursor position
-            else if (keyCode === monaco.KeyCode.DownArrow && !isSuggestVisible) {
+            if (keyCode === monaco.KeyCode.DownArrow && !isSuggestVisible) {
                 e.preventDefault();
                 e.stopPropagation();
                 this.navigateReplHistory('down');
+                return;
             }
+            
+            // If we get here and suggest is visible, let Monaco handle the event
         });
 
         // Validate syntax as user types
