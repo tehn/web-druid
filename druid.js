@@ -18,10 +18,10 @@ class CrowConnection {
     async connect() {
         try {
             this.port = await navigator.serial.requestPort({
-                filters: [{ usbVendorId: 0x0483, usbProductId: 0x5740 }]
+                filters: [{ usbVendorId: 0xCAFE, usbProductId: 0x1101 }]
             });
 
-            await this.port.open({ 
+            await this.port.open({
                 baudRate: 115200,
                 dataBits: 8,
                 stopBits: 1,
@@ -30,7 +30,7 @@ class CrowConnection {
             });
 
             this.isConnected = true;
-            
+
             const textDecoder = new TextDecoderStream();
             this.readableStreamClosed = this.port.readable.pipeTo(textDecoder.writable);
             this.reader = textDecoder.readable.getReader();
@@ -70,22 +70,22 @@ class CrowConnection {
                 // Close streams but keep port reference
                 this.isConnected = false;
                 this.shouldReconnect = false;
-                
+
                 if (this.reader) {
                     await this.reader.cancel().catch(() => {});
                 }
                 if (this.writer) {
                     await this.writer.close().catch(() => {});
                 }
-                
+
                 this.reader = null;
                 this.writer = null;
-                
+
                 if (this.port) {
                     await this.port.close().catch(() => {});
                     this.port = null;
                 }
-                
+
                 if (this.onConnectionChange) {
                     this.onConnectionChange(false, 'device disconnected. please reconnect > ' );
                 }
@@ -97,7 +97,7 @@ class CrowConnection {
         if (!this.isConnected || !this.writer) {
             throw new Error('Not connected');
         }
-        
+
         try {
             await this.writer.write(data);
         } catch (error) {
@@ -107,7 +107,7 @@ class CrowConnection {
     }
 
     async writeLine(line) {
-        await this.write(line + '\r\n');
+        await this.write(line + '\n');
     }
 
     async disconnect() {
@@ -146,7 +146,7 @@ class DruidApp {
         this.scriptName = 'untitled.lua';
         this.scriptModified = false;
         this.currentFile = null;
-        
+
         // Command history for REPL
         this.commandHistory = [];
         this.historyIndex = -1;
@@ -155,7 +155,7 @@ class DruidApp {
         this.commandHistory = [];
         this.historyIndex = -1;
         this.currentInput = '';
-        
+
         this.initializeUI();
         this.checkBrowserSupport();
         this.setupEventListeners();
@@ -168,7 +168,7 @@ class DruidApp {
             // Header
             toggleEditorBtn: document.getElementById('toggleEditorBtn'),
             scriptName: document.getElementById('scriptName'),
-            
+
             // Toolbar
             runBtn: document.getElementById('runBtn'),
             uploadBtn: document.getElementById('uploadBtn'),
@@ -180,12 +180,12 @@ class DruidApp {
             horizontalLayoutBtn: document.getElementById('horizontalLayoutBtn'),
             verticalLayoutBtn: document.getElementById('verticalLayoutBtn'),
             swapPanesBtn: document.getElementById('swapPanesBtn'),
-            
+
             // REPL controls
             connectionBtn: document.getElementById('replConnectionBtn'),
             replStatusIndicator: document.getElementById('replStatusIndicator'),
             replStatusText: document.getElementById('replStatusText'),
-            
+
             // Editor/REPL
             editorContainer: document.getElementById('editor'),
             output: document.getElementById('output'),
@@ -195,20 +195,20 @@ class DruidApp {
             toggleReplAutocomplete: document.getElementById('toggleReplAutocomplete'),
             helpBtn: document.getElementById('helpBtn'),
             clearBtn: document.getElementById('clearBtn'),
-            
+
             // Split pane
             toolbar: document.getElementById('toolbar'),
             splitContainer: document.getElementById('splitContainer'),
             editorPane: document.getElementById('editorPane'),
             splitHandle: document.getElementById('splitHandle'),
             replPane: document.getElementById('replPane'),
-            
+
             // Script reference
             scriptReferenceBtn: document.getElementById('scriptReferenceBtn'),
-            
+
             // File input
             fileInput: document.getElementById('fileInput'),
-            
+
             // Modals
             browserWarning: document.getElementById('browserWarning'),
             closeWarning: document.getElementById('closeWarning'),
@@ -257,7 +257,7 @@ class DruidApp {
         });
         this.elements.saveBtn.addEventListener('click', () => this.saveScript());
         this.elements.renameBtn.addEventListener('click', () => this.renameScript());
-        
+
         // Layout toggle buttons
         this.elements.horizontalLayoutBtn.addEventListener('click', () => this.setLayout('horizontal'));
         this.elements.verticalLayoutBtn.addEventListener('click', () => this.setLayout('vertical'));
@@ -272,7 +272,7 @@ class DruidApp {
         // REPL actions
         this.elements.helpBtn.addEventListener('click', () => this.showHelp());
         this.elements.clearBtn.addEventListener('click', () => this.clearOutput());
-        
+
         // Script reference
         this.elements.scriptReferenceBtn.addEventListener('click', () => {
             window.open('https://monome.org/docs/crow/reference', '_blank');
@@ -282,15 +282,15 @@ class DruidApp {
         this.elements.closeWarning.addEventListener('click', () => {
             this.elements.browserWarning.style.display = 'none';
         });
-        
+
         this.elements.closeBowery.addEventListener('click', () => {
             this.elements.boweryModal.style.display = 'none';
         });
-        
+
         this.elements.closeBbbowery.addEventListener('click', () => {
             this.elements.bbboweryModal.style.display = 'none';
         });
-        
+
         this.elements.bowerySearch.addEventListener('input', (e) => {
             this.filterBoweryScripts(e.target.value);
         });
@@ -308,11 +308,11 @@ class DruidApp {
 
     initializeEditor() {
         require.config({ paths: { vs: 'node_modules/monaco-editor/min/vs' } });
-        
+
         require(['vs/editor/editor.main'], () => {
             // Configure Lua language settings
             monaco.languages.lua = monaco.languages.lua || {};
-            
+
             // Set up Lua diagnostics options
             monaco.languages.setLanguageConfiguration('lua', {
                 wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
@@ -375,7 +375,7 @@ class DruidApp {
                 run: (ed) => {
                     const selection = ed.getSelection();
                     const selectedText = ed.getModel().getValueInRange(selection);
-                    
+
                     if (selectedText.trim()) {
                         this.sendToCrow(selectedText);
                     } else {
@@ -391,7 +391,7 @@ class DruidApp {
 
             // Initial validation
             this.validateLuaSyntax();
-            
+
             // Initialize REPL editor after main editor is ready
             this.initializeReplEditor();
         });
@@ -491,11 +491,11 @@ class DruidApp {
             // Check if suggestion widget is visible by querying the DOM
             const suggestWidget = document.querySelector('.editor-widget.suggest-widget.visible');
             const isSuggestVisible = suggestWidget !== null;
-            
+
             // Check if a suggestion is actually selected (has the focused class)
-            const isSuggestionSelected = isSuggestVisible && 
+            const isSuggestionSelected = isSuggestVisible &&
                 suggestWidget.querySelector('.monaco-list-row.focused') !== null;
-            
+
             // Handle Enter key
             if (keyCode === monaco.KeyCode.Enter && !e.shiftKey) {
                 // If suggestion widget is visible AND a suggestion is selected, let Monaco handle it
@@ -512,7 +512,7 @@ class DruidApp {
                 return;
             }
             // Shift+Enter always creates a new line (default behavior, don't prevent)
-            
+
             // Handle Up/Down arrows - only navigate history when suggestion widget is NOT visible
             // When suggestion widget IS visible, let Monaco handle arrow keys for navigation
             if (keyCode === monaco.KeyCode.UpArrow && !isSuggestVisible) {
@@ -521,14 +521,14 @@ class DruidApp {
                 this.navigateReplHistory('up');
                 return;
             }
-            
+
             if (keyCode === monaco.KeyCode.DownArrow && !isSuggestVisible) {
                 e.preventDefault();
                 e.stopPropagation();
                 this.navigateReplHistory('down');
                 return;
             }
-            
+
             // If we get here and suggest is visible, let Monaco handle the event
         });
 
@@ -1611,7 +1611,7 @@ class DruidApp {
                 await this.delay(1);
             }
             
-            await this.crow.writeLine('^^e'); // execute script
+            await this.crow.writeLine('^^w'); // execute script
             await this.delay(100);
             this.outputLine(`Ran ${this.scriptName}\n`);
         } catch (error) {
